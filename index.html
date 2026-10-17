@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Töökoha muutused</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tedi-design-system/core@6.11.3/index-without-icons.css">
+<style>
+  /* Komponendid on tehtud TEDI core tokenite peale (värvid, raadiused, vahed). */
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; min-height: 100vh; }
+  svg.ikoon { width: 1.25rem; height: 1.25rem; fill: currentColor; flex-shrink: 0; }
+
+  .pais { background: var(--general-surface-primary); border-bottom: 1px solid var(--general-border-primary); }
+  .pais-sisu, main { max-width: 64rem; margin: 0 auto; padding: 0 1rem; }
+  .pais-sisu { padding-block: 1rem; }
+  .pais-alapealkiri { color: var(--general-text-secondary); font-size: var(--body-small-regular-size); }
+
+  main { padding-block: 1.5rem 3rem; display: flex; flex-direction: column; gap: 1rem; }
+  h1 { margin: 0; }
+  h2 { font-size: var(--heading-h4-size); font-weight: var(--heading-h4-weight); line-height: var(--heading-h4-line-height); margin-bottom: 1rem; }
+
+  .kaart {
+    background: var(--card-background-primary);
+    border: 1px solid var(--card-border-primary);
+    border-radius: var(--card-radius-rounded);
+    padding: var(--card-padding-md-default);
+  }
+
+  .silt { display: block; font-weight: 700; margin-bottom: .25rem; }
+  .abi { color: var(--general-text-tertiary); font-size: var(--body-small-regular-size); margin-bottom: .5rem; }
+  .vali + .vali { margin-top: 1.25rem; }
+
+  .dropzone {
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
+    min-height: 5.5rem; padding: var(--file-dropzone-padding-y) var(--file-dropzone-padding-x);
+    background: var(--file-dropzone-background-default);
+    border: 1px dashed var(--file-dropzone-border-default);
+    border-radius: var(--form-field-radius);
+    color: var(--file-dropzone-text-default);
+    cursor: pointer; text-align: center;
+  }
+  .dropzone:hover { background: var(--file-dropzone-background-hover); border-color: var(--file-dropzone-border-hover); }
+  .dropzone.ule { background: var(--file-dropzone-background-drop-over); border-color: var(--file-dropzone-border-drop-over); border-style: solid; }
+  .dropzone:focus-visible { outline: 2px solid var(--file-dropzone-border-focus); outline-offset: 2px; }
+  .dropzone u { color: var(--general-text-brand); }
+  .dropzone input { display: none; }
+  .dropzone * { pointer-events: none; }
+
+  .fail {
+    display: none; align-items: center; gap: .75rem;
+    padding: .75rem 1rem; border: 1px solid var(--general-border-primary);
+    border-radius: var(--form-field-radius); background: var(--general-surface-secondary);
+  }
+  .fail .ikoon { color: var(--general-icon-success); }
+  .fail-nimi { font-weight: 500; word-break: break-all; }
+  .fail-suurus { color: var(--general-text-tertiary); font-size: var(--body-small-regular-size); }
+  .fail-info { flex: 1; min-width: 0; }
+  .vali.valitud .dropzone { display: none; }
+  .vali.valitud .fail { display: flex; }
+
+  .nupp {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    min-height: var(--form-field-height); padding: var(--button-md-padding-y) var(--button-md-padding-x);
+    border-radius: var(--button-radius-default); border: 1px solid transparent;
+    font: inherit; font-weight: 500; cursor: pointer; text-decoration: none;
+  }
+  .nupp:focus-visible { outline: 2px solid var(--button-main-primary-border-focus); outline-offset: 2px; }
+  .nupp-esmane { background: var(--button-main-primary-background-default); color: var(--button-main-primary-text-default); }
+  .nupp-esmane:hover { background: var(--button-main-primary-background-hover); }
+  .nupp-esmane:active { background: var(--button-main-primary-background-active); }
+  .nupp-teisene { background: var(--button-main-secondary-background-default); color: var(--button-main-secondary-text-default); border-color: var(--button-main-secondary-border-default); }
+  .nupp-teisene:hover { background: var(--general-surface-hover); }
+  .nupp-tekst { background: none; color: var(--general-text-brand); padding-inline: .5rem; min-height: auto; }
+  .nupp-tekst:hover { text-decoration: underline; }
+  .nupp:disabled { background: var(--button-main-disabled-general-background); color: var(--button-main-disabled-general-text); border-color: var(--button-main-disabled-general-border); cursor: default; }
+  .nupud { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-top: 1.5rem; }
+
+  .spinner { width: 1.125rem; height: 1.125rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: keera .8s linear infinite; }
+  @keyframes keera { to { transform: rotate(360deg); } }
+
+  .teade {
+    display: flex; gap: .75rem; padding: var(--alert-default-padding-y) var(--alert-default-padding-x);
+    border: 1px solid; border-left-width: 4px; border-radius: var(--alert-radius);
+  }
+  .teade[hidden] { display: none; }
+  .teade-pealkiri { font-weight: 700; }
+  .teade-edu { background: var(--alert-default-background-success); border-color: var(--alert-default-border-success); color: var(--alert-default-text-success); }
+  .teade-edu > .ikoon { color: var(--general-icon-success); }
+  .teade-hoiatus { background: var(--alert-default-background-warning); border-color: var(--alert-default-border-warning); color: var(--alert-default-text-warning); }
+  .teade-hoiatus > .ikoon { color: var(--general-icon-warning-dark); }
+  .teade-viga { background: var(--alert-default-background-danger); border-color: var(--alert-default-border-danger); color: var(--alert-default-text-danger); }
+  .teade-viga > .ikoon { color: var(--general-icon-danger); }
+  .teade ul { margin: .25rem 0 0; padding-left: 1.25rem; }
+
+  .tabeli-kest { overflow-x: auto; border: 1px solid var(--general-border-primary); border-radius: var(--card-radius-rounded); }
+  table { width: 100%; border-collapse: collapse; font-size: var(--body-small-regular-size); }
+  th, td { padding: .625rem .75rem; text-align: left; border-bottom: 1px solid var(--general-border-primary); white-space: nowrap; }
+  th { background: var(--general-surface-secondary); font-weight: 700; }
+  tr:last-child td { border-bottom: 0; }
+  td.vana { color: var(--general-text-tertiary); }
+  .tumm { color: var(--general-text-tertiary); }
+  .tag { display: inline-block; padding: .125rem .5rem; border-radius: var(--button-radius-default); font-weight: 500; }
+  .tag-kehtiv { background: var(--alert-default-background-success); color: var(--general-status-success-text); }
+  .tag-peatatud { background: var(--alert-default-background-warning); color: var(--general-status-warning-text); }
+
+  .privaatsus { display: flex; gap: .5rem; align-items: flex-start; color: var(--general-text-tertiary); font-size: var(--body-small-regular-size); }
+</style>
+</head>
+<body>
+
+<header class="pais">
+  <div class="pais-sisu">
+    <h1>Töökoha muutused</h1>
+    <div class="pais-alapealkiri">Võrdleb Taavi toimikuid Oksjonikeskuse töötamise registri vastusega</div>
+  </div>
+</header>
+
+<main>
+  <section class="kaart">
+    <h2>Vali failid</h2>
+
+    <div class="vali" id="vali-xml">
+      <span class="silt">1. Taavi eksport</span>
+      <div class="abi">XML-fail, näiteks toimikud.xml</div>
+      <label class="dropzone" tabindex="0">
+        <input type="file" accept=".xml">
+        <span>Lohista fail siia või <u>vali arvutist</u></span>
+      </label>
+      <div class="fail">
+        <span class="ikoon-koht" data-ikoon="ok"></span>
+        <div class="fail-info"><div class="fail-nimi"></div><div class="fail-suurus"></div></div>
+        <button type="button" class="nupp nupp-tekst muuda">Muuda</button>
+      </div>
+    </div>
+
+    <div class="vali" id="vali-csv">
+      <span class="silt">2. Oksjonikeskuse vastus</span>
+      <div class="abi">CSV-fail, mille Oksjonikeskus tagastas</div>
+      <label class="dropzone" tabindex="0">
+        <input type="file" accept=".csv,.txt">
+        <span>Lohista fail siia või <u>vali arvutist</u></span>
+      </label>
+      <div class="fail">
+        <span class="ikoon-koht" data-ikoon="ok"></span>
+        <div class="fail-info"><div class="fail-nimi"></div><div class="fail-suurus"></div></div>
+        <button type="button" class="nupp nupp-tekst muuda">Muuda</button>
+      </div>
+    </div>
+
+    <div class="nupud">
+      <button type="button" class="nupp nupp-esmane" id="kaivita" disabled></button>
+    </div>
+  </section>
+
+  <div class="teade teade-viga" id="viga" hidden role="alert">
+    <span class="ikoon-koht" data-ikoon="viga"></span>
+    <div><div class="teade-pealkiri">Midagi läks valesti</div><div id="viga-tekst"></div><div class="tumm" id="viga-detail" style="margin-top:.25rem;font-size:var(--body-small-regular-size)"></div></div>
+  </div>
+
+  <section class="kaart" id="tulemus" hidden>
+    <h2>Tulemus</h2>
+    <div class="teade teade-edu" id="edu">
+      <span class="ikoon-koht" data-ikoon="ok"></span>
+      <div><div class="teade-pealkiri" id="edu-pealkiri"></div><div id="edu-tekst"></div></div>
+    </div>
+
+    <div class="teade teade-hoiatus" id="hoiatus" hidden style="margin-top:1rem">
+      <span class="ikoon-koht" data-ikoon="hoiatus"></span>
+      <div><div class="teade-pealkiri">Tähelepanu</div><ul id="hoiatus-list"></ul></div>
+    </div>
+
+    <div class="tabeli-kest" id="tabel-kest" style="margin-top:1rem">
+      <table><thead><tr>
+        <th>Toimik</th><th>Isikukood</th><th>Vana töökoht</th><th>Uus töökoht</th><th>Uus reg nr</th><th>Viimati töötas</th>
+      </tr></thead><tbody id="tabel"></tbody></table>
+    </div>
+
+    <div class="nupud">
+      <button type="button" class="nupp nupp-esmane" id="laadi"><span class="ikoon-koht" data-ikoon="alla"></span>Laadi alla CSV</button>
+      <button type="button" class="nupp nupp-teisene" id="uuesti">Alusta uuesti</button>
+    </div>
+  </section>
+
+  <p class="privaatsus">
+    <span class="ikoon-koht" data-ikoon="lukk"></span>
+    <span>Failid töödeldakse ainult sinu brauseris. Serverisse ega kuhugi mujale midagi ei saadeta.</span>
+  </p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/pyodide@314.0.7/pyodide.js"></script>
+<script>
+const IKOONID = {
+  ok: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z",
+  hoiatus: "M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z",
+  viga: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z",
+  alla: "M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z",
+  lukk: "M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z",
+};
+document.querySelectorAll(".ikoon-koht").forEach(el => {
+  el.outerHTML = `<svg class="ikoon" viewBox="0 0 24 24" aria-hidden="true"><path d="${IKOONID[el.dataset.ikoon]}"/></svg>`;
+});
+
+const $ = id => document.getElementById(id);
+const failid = { xml: null, csv: null };
+let pyValmis = false, tootleb = false, valjund = null;
+
+// --- Failide valimine ---
+
+function suurus(baite) {
+  return baite < 1024 * 1024 ? Math.ceil(baite / 1024) + " KB" : (baite / 1024 / 1024).toFixed(1) + " MB";
+}
+
+function maaraFail(fail) {
+  const tyyp = fail.name.toLowerCase().endsWith(".xml") ? "xml" : "csv";
+  failid[tyyp] = fail;
+  const plokk = $("vali-" + tyyp);
+  plokk.classList.add("valitud");
+  plokk.querySelector(".fail-nimi").textContent = fail.name;
+  plokk.querySelector(".fail-suurus").textContent = suurus(fail.size);
+  peidaTulemus();
+  uuendaNuppu();
+}
+
+for (const tyyp of ["xml", "csv"]) {
+  const plokk = $("vali-" + tyyp);
+  const zone = plokk.querySelector(".dropzone");
+  const input = plokk.querySelector("input");
+
+  input.onchange = () => { if (input.files[0]) maaraFail(input.files[0]); input.value = ""; };
+  zone.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } };
+  zone.ondragover = e => { e.preventDefault(); zone.classList.add("ule"); };
+  zone.ondragleave = () => zone.classList.remove("ule");
+  // Mõlema faili korraga lohistamisel jagatakse need laiendi järgi õigesse kohta
+  zone.ondrop = e => { e.preventDefault(); e.stopPropagation(); zone.classList.remove("ule"); [...e.dataTransfer.files].forEach(maaraFail); };
+
+  plokk.querySelector(".muuda").onclick = () => {
+    failid[tyyp] = null;
+    plokk.classList.remove("valitud");
+    peidaTulemus();
+    uuendaNuppu();
+    input.click();
+  };
+}
+// Kui fail lohistatakse mujale lehele, ära ava seda brauseris
+addEventListener("dragover", e => e.preventDefault());
+addEventListener("drop", e => { e.preventDefault(); [...e.dataTransfer.files].forEach(maaraFail); });
+
+function uuendaNuppu() {
+  const nupp = $("kaivita");
+  if (!pyValmis || tootleb) {
+    nupp.disabled = true;
+    nupp.innerHTML = `<span class="spinner"></span>${tootleb ? "Töötlen..." : "Valmistan ette..."}`;
+  } else {
+    nupp.disabled = !(failid.xml && failid.csv);
+    nupp.textContent = "Leia muutunud töökohad";
+  }
+}
+
+// --- Python ---
+
+let hoiatused = [];
+const pyPromise = (async () => {
+  const py = await loadPyodide({ stderr: t => hoiatused.push(t) });
+  const kood = await (await fetch("tookoha_muutused.py")).text();
+  py.FS.writeFile("tookoha_muutused.py", kood);
+  py.runPython(`
+import sys, csv
+sys.path.insert(0, '.')
+import tookoha_muutused
+
+def kaivita():
+    tookoha_muutused.main('sisend.xml', 'sisend.csv', 'muutunud_tookohad.csv')
+    with open('muutunud_tookohad.csv', encoding='utf-8-sig', newline='') as f:
+        return list(csv.reader(f, delimiter=';'))[1:]
+`);
+  pyValmis = true;
+  uuendaNuppu();
+  return py;
+})().catch(e => {
+  naitaViga("Tööriista laadimine ebaõnnestus. Kontrolli internetiühendust ja laadi leht uuesti.", e);
+});
+uuendaNuppu();
+
+$("kaivita").onclick = async () => {
+  const py = await pyPromise;
+  tootleb = true;
+  uuendaNuppu();
+  peidaTulemus();
+  hoiatused = [];
+  await new Promise(r => setTimeout(r, 30)); // lase spinneril enne arvutust ilmuda
+  try {
+    py.FS.writeFile("sisend.xml", new Uint8Array(await failid.xml.arrayBuffer()));
+    py.FS.writeFile("sisend.csv", new Uint8Array(await failid.csv.arrayBuffer()));
+    py.setStdout({ batched: () => {} });
+    const read = py.globals.get("kaivita")().toJs();
+    valjund = py.FS.readFile("muutunud_tookohad.csv");
+    naitaTulemus(read);
+  } catch (e) {
+    naitaViga("Faile ei õnnestunud töödelda. Kontrolli, et valisid õiged failid (Taavi XML eksport ja Oksjonikeskuse CSV).", e);
+  }
+  tootleb = false;
+  uuendaNuppu();
+};
+
+// --- Tulemus ---
+
+function lahter(tekst, klass) {
+  const td = document.createElement("td");
+  td.textContent = tekst;
+  if (klass) td.className = klass;
+  return td;
+}
+
+function naitaTulemus(read) {
+  $("edu-pealkiri").textContent = read.length === 0
+    ? "Muutunud töökohti ei leitud"
+    : `Leiti ${read.length} ${read.length === 1 ? "muutunud töökoht" : "muutunud töökohta"}`;
+  $("edu-tekst").textContent = read.length === 0
+    ? "Kõigil toimikutel on Taavis olev tööandja endiselt aktuaalne."
+    : "Vaata muudatusi allolevast tabelist. CSV-faili saad alla laadida nupuga.";
+
+  const tbody = $("tabel");
+  tbody.replaceChildren();
+  for (const [toimik, ik, vanaNimi, vanaKood, uusNimi, uusKood, viimati] of read) {
+    const tr = document.createElement("tr");
+    tr.append(
+      lahter(toimik), lahter(ik),
+      lahter(vanaNimi || "puudub", vanaNimi ? "vana" : "tumm"),
+      lahter(uusNimi), lahter(uusKood),
+    );
+    const td = document.createElement("td");
+    if (viimati === "kehtiv" || viimati === "peatatud") {
+      td.innerHTML = `<span class="tag tag-${viimati}">${viimati}</span>`;
+    } else {
+      td.textContent = viimati;
+    }
+    tr.append(td);
+    tbody.append(tr);
+  }
+  $("tabel-kest").hidden = read.length === 0;
+  $("laadi").hidden = read.length === 0;
+
+  const tekstid = hoiatused.map(h => h.replace(/^Hoiatus:\s*/, "")).filter(Boolean).map(t => t[0].toUpperCase() + t.slice(1));
+  $("hoiatus-list").replaceChildren(...tekstid.map(t => Object.assign(document.createElement("li"), { textContent: t })));
+  $("hoiatus").hidden = tekstid.length === 0;
+
+  $("tulemus").hidden = false;
+  $("tulemus").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function laadiAlla() {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([valjund], { type: "text/csv" }));
+  a.download = "muutunud_tookohad.csv";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function naitaViga(tekst, e) {
+  console.error(e);
+  $("viga-tekst").textContent = tekst;
+  $("viga-detail").textContent = String(e?.message || e).trim().split("\n").pop();
+  $("viga").hidden = false;
+}
+
+function peidaTulemus() {
+  $("tulemus").hidden = true;
+  $("viga").hidden = true;
+}
+
+$("laadi").onclick = laadiAlla;
+$("uuesti").onclick = () => {
+  for (const tyyp of ["xml", "csv"]) {
+    failid[tyyp] = null;
+    $("vali-" + tyyp).classList.remove("valitud");
+  }
+  peidaTulemus();
+  uuendaNuppu();
+  scrollTo({ top: 0, behavior: "smooth" });
+};
+</script>
+</body>
+</html>
