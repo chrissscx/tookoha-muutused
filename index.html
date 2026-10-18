@@ -17,7 +17,7 @@
 
   .pais { background: var(--general-surface-primary); border-bottom: 1px solid var(--general-border-primary); }
   .pais-sisu, main { max-width: 64rem; margin: 0 auto; padding: 0 1rem; }
-  .pais-sisu { padding-block: 1rem; }
+  .pais-sisu { padding-block: 1rem 0; }
   .pais-alapealkiri { color: var(--general-text-secondary); font-size: var(--body-small-regular-size); }
 
   main { padding-block: 1.5rem 3rem; display: flex; flex-direction: column; gap: 1rem; }
@@ -109,6 +109,24 @@
   .tag-peatatud { background: var(--alert-default-background-warning); color: var(--general-status-warning-text); }
 
   .privaatsus { display: flex; gap: .5rem; align-items: flex-start; color: var(--general-text-tertiary); font-size: var(--body-small-regular-size); }
+
+  .vahelehed { display: flex; gap: .25rem; margin-top: 1rem; overflow-x: auto; }
+  .vaheleht {
+    padding: var(--tab-spacing-y) var(--tab-spacing-x); border: 0; border-bottom: 3px solid transparent;
+    background: var(--tab-item-default-background); color: var(--tab-item-default-text);
+    font: inherit; cursor: pointer; white-space: nowrap;
+    border-radius: var(--tab-top-radius) var(--tab-top-radius) 0 0;
+  }
+  .vaheleht:hover { background: var(--tab-item-hover-background); color: var(--tab-item-hover-text); }
+  .vaheleht[aria-selected="true"] { color: var(--tab-item-selected-text); border-bottom-color: var(--tab-item-selected-border); font-weight: 500; }
+  .vaheleht:focus-visible { outline: 2px solid var(--button-main-primary-border-focus); outline-offset: -2px; }
+  @media (max-width: 600px) { .vaheleht { flex: 1; white-space: normal; padding-inline: .75rem; } }
+  .kirjeldus { color: var(--general-text-secondary); margin: -.5rem 0 1rem; }
+
+  .tag-uus, .tag-algas { background: var(--alert-default-background-success); color: var(--general-status-success-text); }
+  .tag-loppes { background: var(--alert-default-background-danger); color: var(--general-status-danger-text); }
+  .tag-info { background: var(--general-status-info-background-light); color: var(--general-status-info-text); }
+  .tag-kadus { background: var(--general-surface-tertiary); color: var(--general-text-secondary); }
 </style>
 </head>
 <body>
@@ -116,39 +134,37 @@
 <header class="pais">
   <div class="pais-sisu">
     <h1>Töökoha muutused</h1>
-    <div class="pais-alapealkiri">Võrdleb Taavi toimikuid Oksjonikeskuse töötamise registri vastusega</div>
+    <div class="vahelehed" role="tablist">
+      <button type="button" class="vaheleht" role="tab" data-toriist="taavi" aria-selected="true">Taavi ja Oksjonikeskus</button>
+      <button type="button" class="vaheleht" role="tab" data-toriist="oksjon" aria-selected="false">Kaks Oksjonikeskuse vastust</button>
+    </div>
   </div>
 </header>
 
 <main>
   <section class="kaart">
     <h2>Vali failid</h2>
+    <p class="kirjeldus" id="kirjeldus"></p>
 
-    <div class="vali" id="vali-xml">
-      <span class="silt">1. Taavi eksport</span>
-      <div class="abi">XML-fail, näiteks toimikud.xml</div>
-      <label class="dropzone" tabindex="0">
-        <input type="file" accept=".xml">
-        <span>Lohista fail siia või <u>vali arvutist</u></span>
-      </label>
-      <div class="fail">
-        <span class="ikoon-koht" data-ikoon="ok"></span>
-        <div class="fail-info"><div class="fail-nimi"></div><div class="fail-suurus"></div></div>
-        <button type="button" class="nupp nupp-tekst muuda">Muuda</button>
+    <div class="pilud" data-toriist="taavi">
+      <div class="vali" data-pilu="xml">
+        <span class="silt">1. Taavi eksport</span>
+        <div class="abi">XML-fail, näiteks toimikud.xml</div>
+      </div>
+      <div class="vali" data-pilu="csv">
+        <span class="silt">2. Oksjonikeskuse vastus</span>
+        <div class="abi">CSV-fail, mille Oksjonikeskus tagastas</div>
       </div>
     </div>
 
-    <div class="vali" id="vali-csv">
-      <span class="silt">2. Oksjonikeskuse vastus</span>
-      <div class="abi">CSV-fail, mille Oksjonikeskus tagastas</div>
-      <label class="dropzone" tabindex="0">
-        <input type="file" accept=".csv,.txt">
-        <span>Lohista fail siia või <u>vali arvutist</u></span>
-      </label>
-      <div class="fail">
-        <span class="ikoon-koht" data-ikoon="ok"></span>
-        <div class="fail-info"><div class="fail-nimi"></div><div class="fail-suurus"></div></div>
-        <button type="button" class="nupp nupp-tekst muuda">Muuda</button>
+    <div class="pilud" data-toriist="oksjon" hidden>
+      <div class="vali" data-pilu="vana">
+        <span class="silt">1. Vana vastus</span>
+        <div class="abi">Varasem Oksjonikeskuse CSV, näiteks eilne</div>
+      </div>
+      <div class="vali" data-pilu="uus">
+        <span class="silt">2. Uus vastus</span>
+        <div class="abi">Uuem Oksjonikeskuse CSV, näiteks tänane</div>
       </div>
     </div>
 
@@ -175,9 +191,7 @@
     </div>
 
     <div class="tabeli-kest" id="tabel-kest" style="margin-top:1rem">
-      <table><thead><tr>
-        <th>Toimik</th><th>Isikukood</th><th>Vana töökoht</th><th>Uus töökoht</th><th>Uus reg nr</th><th>Viimati töötas</th>
-      </tr></thead><tbody id="tabel"></tbody></table>
+      <table><thead><tr id="tabel-pais"></tr></thead><tbody id="tabel"></tbody></table>
     </div>
 
     <div class="nupud">
@@ -192,6 +206,18 @@
   </p>
 </main>
 
+<template id="pilu-mall">
+  <label class="dropzone" tabindex="0">
+    <input type="file">
+    <span>Lohista fail siia või <u>vali arvutist</u></span>
+  </label>
+  <div class="fail">
+    <span class="ikoon-koht" data-ikoon="ok"></span>
+    <div class="fail-info"><div class="fail-nimi"></div><div class="fail-suurus"></div></div>
+    <button type="button" class="nupp nupp-tekst muuda">Muuda</button>
+  </div>
+</template>
+
 <script src="https://cdn.jsdelivr.net/npm/pyodide@314.0.7/pyodide.js"></script>
 <script>
 const IKOONID = {
@@ -201,13 +227,83 @@ const IKOONID = {
   alla: "M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z",
   lukk: "M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z",
 };
+
+const $ = id => document.getElementById(id);
+
+// Täidab dropzone'i ja valitud faili ploki iga pilu sisse
+document.querySelectorAll(".vali").forEach(plokk => {
+  plokk.append($("pilu-mall").content.cloneNode(true));
+  plokk.querySelector("input").accept = plokk.dataset.pilu === "xml" ? ".xml" : ".csv,.txt";
+});
 document.querySelectorAll(".ikoon-koht").forEach(el => {
   el.outerHTML = `<svg class="ikoon" viewBox="0 0 24 24" aria-hidden="true"><path d="${IKOONID[el.dataset.ikoon]}"/></svg>`;
 });
 
-const $ = id => document.getElementById(id);
-const failid = { xml: null, csv: null };
-let pyValmis = false, tootleb = false, valjund = null;
+function silt(tekst, klass) {
+  const s = document.createElement("span");
+  s.className = "tag " + klass;
+  s.textContent = tekst;
+  return s;
+}
+
+const MUUTUSE_KLASS = {
+  "Töökoha vahetus": "tag-uus", "Uus töötamine": "tag-uus", "Uus kanne": "tag-uus", "Töötamine algas": "tag-algas", "Peatamine lõppes": "tag-algas",
+  "Töötamine lõppes": "tag-loppes", "Töötamine peatati": "tag-peatatud", "Kadus vastusest": "tag-kadus",
+};
+
+const TORIISTAD = {
+  taavi: {
+    moodul: "tookoha_muutused",
+    valjund: "muutunud_tookohad.csv",
+    pilud: ["xml", "csv"],
+    kirjeldus: "Leiab toimikud, kus Oksjonikeskuse andmetel on võlgniku tööandja teine kui Taavis.",
+    nupp: "Leia muutunud töökohad",
+    viga: "Faile ei õnnestunud töödelda. Kontrolli, et valisid õiged failid (Taavi XML eksport ja Oksjonikeskuse CSV).",
+    pealkiri: n => n === 0 ? "Muutunud töökohti ei leitud" : `Leiti ${n} ${n === 1 ? "muutunud töökoht" : "muutunud töökohta"}`,
+    tyhi: "Kõigil toimikutel on Taavis olev tööandja endiselt aktuaalne.",
+    veerud: ["Toimik", "Isikukood", "Vana töökoht", "Uus töökoht", "Uus reg nr", "Viimati töötas"],
+    rida: ([toimik, ik, vanaNimi, , uusNimi, uusKood, viimati]) => [
+      toimik, ik,
+      vanaNimi ? { tekst: vanaNimi, klass: "vana" } : { tekst: "puudub", klass: "tumm" },
+      uusNimi, uusKood,
+      viimati === "kehtiv" || viimati === "peatatud" ? silt(viimati, "tag-" + viimati) : viimati,
+    ],
+  },
+  oksjon: {
+    moodul: "oksjonikeskus_vordlus",
+    valjund: "oksjonikeskus_muutused.csv",
+    pilud: ["vana", "uus"],
+    kirjeldus: "Näitab toimikuid, kus võlgniku töötamised on kahe Oksjonikeskuse vastuse vahel muutunud, koos vana ja uue töökohaga.",
+    nupp: "Võrdle vastuseid",
+    viga: "Faile ei õnnestunud töödelda. Kontrolli, et mõlemad on Oksjonikeskuse CSV vastused.",
+    pealkiri: n => n === 0 ? "Muutusi ei leitud" : `Leiti ${n} ${n === 1 ? "muutunud toimik" : "muutunud toimikut"}`,
+    tyhi: "Kõigi võrreldud toimikute töötamised on mõlemas vastuses samad.",
+    veerud: ["Toimik", "Nimi", "Muutus", "Vana töökoht", "Uus töökoht", "Uus reg nr", "Viimati töötas", "Isikukood"],
+    rida: ([toimik, ik, nimi, vanaNimi, , uusNimi, uusKood, viimati, muutus]) => [
+      toimik, nimi,
+      muutus.split(", ").reduce((f, m, i) => (i && f.append(" "), f.append(silt(m, MUUTUSE_KLASS[m] || "tag-info")), f), document.createDocumentFragment()),
+      vanaNimi ? { tekst: vanaNimi, klass: "vana" } : { tekst: "puudub", klass: "tumm" },
+      uusNimi || { tekst: "puudub", klass: "tumm" }, uusKood,
+      ["kehtiv", "peatatud"].includes(viimati.split(" ")[0]) ? silt(viimati, "tag-" + viimati.split(" ")[0]) : viimati,
+      ik,
+    ],
+  },
+};
+
+const failid = {};
+let aktiivne = "taavi", pyValmis = false, tootleb = false, valjund = null;
+
+// --- Vahelehed ---
+
+function valiToriist(nimi) {
+  aktiivne = nimi;
+  document.querySelectorAll(".vaheleht").forEach(v => v.setAttribute("aria-selected", v.dataset.toriist === nimi));
+  document.querySelectorAll(".pilud").forEach(p => p.hidden = p.dataset.toriist !== nimi);
+  $("kirjeldus").textContent = TORIISTAD[nimi].kirjeldus;
+  peidaTulemus();
+  uuendaNuppu();
+}
+document.querySelectorAll(".vaheleht").forEach(v => v.onclick = () => valiToriist(v.dataset.toriist));
 
 // --- Failide valimine ---
 
@@ -215,40 +311,61 @@ function suurus(baite) {
   return baite < 1024 * 1024 ? Math.ceil(baite / 1024) + " KB" : (baite / 1024 / 1024).toFixed(1) + " MB";
 }
 
-function maaraFail(fail) {
-  const tyyp = fail.name.toLowerCase().endsWith(".xml") ? "xml" : "csv";
-  failid[tyyp] = fail;
-  const plokk = $("vali-" + tyyp);
-  plokk.classList.add("valitud");
-  plokk.querySelector(".fail-nimi").textContent = fail.name;
-  plokk.querySelector(".fail-suurus").textContent = suurus(fail.size);
+const plokk = pilu => document.querySelector(`.vali[data-pilu="${pilu}"]`);
+
+function maaraFail(pilu, fail) {
+  failid[pilu] = fail;
+  const p = plokk(pilu);
+  p.classList.add("valitud");
+  p.querySelector(".fail-nimi").textContent = fail.name;
+  p.querySelector(".fail-suurus").textContent = suurus(fail.size);
   peidaTulemus();
   uuendaNuppu();
 }
 
-for (const tyyp of ["xml", "csv"]) {
-  const plokk = $("vali-" + tyyp);
-  const zone = plokk.querySelector(".dropzone");
-  const input = plokk.querySelector("input");
+function eemaldaFail(pilu) {
+  failid[pilu] = null;
+  plokk(pilu).classList.remove("valitud");
+}
 
-  input.onchange = () => { if (input.files[0]) maaraFail(input.files[0]); input.value = ""; };
+// Mitu faili korraga lohistades jagatakse need ise õigesse kohta
+function jaotaFailid(list) {
+  if (aktiivne === "taavi") {
+    list.forEach(f => maaraFail(f.name.toLowerCase().endsWith(".xml") ? "xml" : "csv", f));
+  } else if (list.length >= 2) {
+    // vanem fail (muutmisaja järgi) läheb "vana" alla
+    const [a, b] = [...list].sort((x, y) => x.lastModified - y.lastModified);
+    maaraFail("vana", a);
+    maaraFail("uus", b);
+  } else if (list.length === 1) {
+    maaraFail(failid.vana ? "uus" : "vana", list[0]);
+  }
+}
+
+document.querySelectorAll(".vali").forEach(p => {
+  const pilu = p.dataset.pilu;
+  const zone = p.querySelector(".dropzone");
+  const input = p.querySelector("input");
+
+  input.onchange = () => { if (input.files[0]) maaraFail(pilu, input.files[0]); input.value = ""; };
   zone.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } };
   zone.ondragover = e => { e.preventDefault(); zone.classList.add("ule"); };
   zone.ondragleave = () => zone.classList.remove("ule");
-  // Mõlema faili korraga lohistamisel jagatakse need laiendi järgi õigesse kohta
-  zone.ondrop = e => { e.preventDefault(); e.stopPropagation(); zone.classList.remove("ule"); [...e.dataTransfer.files].forEach(maaraFail); };
-
-  plokk.querySelector(".muuda").onclick = () => {
-    failid[tyyp] = null;
-    plokk.classList.remove("valitud");
+  zone.ondrop = e => {
+    e.preventDefault(); e.stopPropagation(); zone.classList.remove("ule");
+    const list = [...e.dataTransfer.files];
+    list.length === 1 ? maaraFail(pilu, list[0]) : jaotaFailid(list);
+  };
+  p.querySelector(".muuda").onclick = () => {
+    eemaldaFail(pilu);
     peidaTulemus();
     uuendaNuppu();
     input.click();
   };
-}
+});
 // Kui fail lohistatakse mujale lehele, ära ava seda brauseris
 addEventListener("dragover", e => e.preventDefault());
-addEventListener("drop", e => { e.preventDefault(); [...e.dataTransfer.files].forEach(maaraFail); });
+addEventListener("drop", e => { e.preventDefault(); jaotaFailid([...e.dataTransfer.files]); });
 
 function uuendaNuppu() {
   const nupp = $("kaivita");
@@ -256,8 +373,8 @@ function uuendaNuppu() {
     nupp.disabled = true;
     nupp.innerHTML = `<span class="spinner"></span>${tootleb ? "Töötlen..." : "Valmistan ette..."}`;
   } else {
-    nupp.disabled = !(failid.xml && failid.csv);
-    nupp.textContent = "Leia muutunud töökohad";
+    nupp.disabled = !TORIISTAD[aktiivne].pilud.every(p => failid[p]);
+    nupp.textContent = TORIISTAD[aktiivne].nupp;
   }
 }
 
@@ -266,16 +383,18 @@ function uuendaNuppu() {
 let hoiatused = [];
 const pyPromise = (async () => {
   const py = await loadPyodide({ stderr: t => hoiatused.push(t) });
-  const kood = await (await fetch("tookoha_muutused.py")).text();
-  py.FS.writeFile("tookoha_muutused.py", kood);
+  for (const nimi of ["tookoha_muutused.py", "oksjonikeskus_vordlus.py"]) {
+    const vastus = await fetch(nimi);
+    if (!vastus.ok) throw new Error(`${nimi} puudub`);
+    py.FS.writeFile(nimi, await vastus.text());
+  }
   py.runPython(`
-import sys, csv
+import sys, csv, importlib
 sys.path.insert(0, '.')
-import tookoha_muutused
 
-def kaivita():
-    tookoha_muutused.main('sisend.xml', 'sisend.csv', 'muutunud_tookohad.csv')
-    with open('muutunud_tookohad.csv', encoding='utf-8-sig', newline='') as f:
+def kaivita(moodul, sisend1, sisend2, valjund):
+    importlib.import_module(moodul).main(sisend1, sisend2, valjund)
+    with open(valjund, encoding='utf-8-sig', newline='') as f:
         return list(csv.reader(f, delimiter=';'))[1:]
 `);
   pyValmis = true;
@@ -284,24 +403,29 @@ def kaivita():
 })().catch(e => {
   naitaViga("Tööriista laadimine ebaõnnestus. Kontrolli internetiühendust ja laadi leht uuesti.", e);
 });
-uuendaNuppu();
+valiToriist("taavi");
 
 $("kaivita").onclick = async () => {
   const py = await pyPromise;
+  const t = TORIISTAD[aktiivne];
   tootleb = true;
   uuendaNuppu();
   peidaTulemus();
   hoiatused = [];
   await new Promise(r => setTimeout(r, 30)); // lase spinneril enne arvutust ilmuda
   try {
-    py.FS.writeFile("sisend.xml", new Uint8Array(await failid.xml.arrayBuffer()));
-    py.FS.writeFile("sisend.csv", new Uint8Array(await failid.csv.arrayBuffer()));
+    const sisendid = [];
+    for (const [i, pilu] of t.pilud.entries()) {
+      const nimi = `sisend${i + 1}`;
+      py.FS.writeFile(nimi, new Uint8Array(await failid[pilu].arrayBuffer()));
+      sisendid.push(nimi);
+    }
     py.setStdout({ batched: () => {} });
-    const read = py.globals.get("kaivita")().toJs();
-    valjund = py.FS.readFile("muutunud_tookohad.csv");
-    naitaTulemus(read);
+    const read = py.globals.get("kaivita")(t.moodul, ...sisendid, t.valjund).toJs();
+    valjund = py.FS.readFile(t.valjund);
+    naitaTulemus(t, read);
   } catch (e) {
-    naitaViga("Faile ei õnnestunud töödelda. Kontrolli, et valisid õiged failid (Taavi XML eksport ja Oksjonikeskuse CSV).", e);
+    naitaViga(t.viga, e);
   }
   tootleb = false;
   uuendaNuppu();
@@ -309,44 +433,29 @@ $("kaivita").onclick = async () => {
 
 // --- Tulemus ---
 
-function lahter(tekst, klass) {
-  const td = document.createElement("td");
-  td.textContent = tekst;
-  if (klass) td.className = klass;
-  return td;
-}
-
-function naitaTulemus(read) {
-  $("edu-pealkiri").textContent = read.length === 0
-    ? "Muutunud töökohti ei leitud"
-    : `Leiti ${read.length} ${read.length === 1 ? "muutunud töökoht" : "muutunud töökohta"}`;
+function naitaTulemus(t, read) {
+  $("edu-pealkiri").textContent = t.pealkiri(read.length);
   $("edu-tekst").textContent = read.length === 0
-    ? "Kõigil toimikutel on Taavis olev tööandja endiselt aktuaalne."
+    ? t.tyhi
     : "Vaata muudatusi allolevast tabelist. CSV-faili saad alla laadida nupuga.";
 
-  const tbody = $("tabel");
-  tbody.replaceChildren();
-  for (const [toimik, ik, vanaNimi, vanaKood, uusNimi, uusKood, viimati] of read) {
+  $("tabel-pais").replaceChildren(...t.veerud.map(v => Object.assign(document.createElement("th"), { textContent: v })));
+  $("tabel").replaceChildren(...read.map(r => {
     const tr = document.createElement("tr");
-    tr.append(
-      lahter(toimik), lahter(ik),
-      lahter(vanaNimi || "puudub", vanaNimi ? "vana" : "tumm"),
-      lahter(uusNimi), lahter(uusKood),
-    );
-    const td = document.createElement("td");
-    if (viimati === "kehtiv" || viimati === "peatatud") {
-      td.innerHTML = `<span class="tag tag-${viimati}">${viimati}</span>`;
-    } else {
-      td.textContent = viimati;
+    for (const lahter of t.rida(r)) {
+      const td = document.createElement("td");
+      if (lahter instanceof Node) td.append(lahter);
+      else if (lahter && typeof lahter === "object") { td.textContent = lahter.tekst; td.className = lahter.klass; }
+      else td.textContent = lahter ?? "";
+      tr.append(td);
     }
-    tr.append(td);
-    tbody.append(tr);
-  }
+    return tr;
+  }));
   $("tabel-kest").hidden = read.length === 0;
   $("laadi").hidden = read.length === 0;
 
-  const tekstid = hoiatused.map(h => h.replace(/^Hoiatus:\s*/, "")).filter(Boolean).map(t => t[0].toUpperCase() + t.slice(1));
-  $("hoiatus-list").replaceChildren(...tekstid.map(t => Object.assign(document.createElement("li"), { textContent: t })));
+  const tekstid = hoiatused.map(h => h.replace(/^Hoiatus:\s*/, "")).filter(Boolean).map(s => s[0].toUpperCase() + s.slice(1));
+  $("hoiatus-list").replaceChildren(...tekstid.map(s => Object.assign(document.createElement("li"), { textContent: s })));
   $("hoiatus").hidden = tekstid.length === 0;
 
   $("tulemus").hidden = false;
@@ -356,7 +465,7 @@ function naitaTulemus(read) {
 function laadiAlla() {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([valjund], { type: "text/csv" }));
-  a.download = "muutunud_tookohad.csv";
+  a.download = TORIISTAD[aktiivne].valjund;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -375,10 +484,7 @@ function peidaTulemus() {
 
 $("laadi").onclick = laadiAlla;
 $("uuesti").onclick = () => {
-  for (const tyyp of ["xml", "csv"]) {
-    failid[tyyp] = null;
-    $("vali-" + tyyp).classList.remove("valitud");
-  }
+  TORIISTAD[aktiivne].pilud.forEach(eemaldaFail);
   peidaTulemus();
   uuendaNuppu();
   scrollTo({ top: 0, behavior: "smooth" });
