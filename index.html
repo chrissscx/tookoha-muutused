@@ -384,7 +384,7 @@ let hoiatused = [];
 const pyPromise = (async () => {
   const py = await loadPyodide({ stderr: t => hoiatused.push(t) });
   for (const nimi of ["tookoha_muutused.py", "oksjonikeskus_vordlus.py"]) {
-    const vastus = await fetch(nimi);
+    const vastus = await fetch(nimi, { cache: "no-store" });
     if (!vastus.ok) throw new Error(`${nimi} puudub`);
     py.FS.writeFile(nimi, await vastus.text());
   }
