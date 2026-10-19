@@ -135,8 +135,9 @@
   <div class="pais-sisu">
     <h1>Töökoha muutused</h1>
     <div class="vahelehed" role="tablist">
-      <button type="button" class="vaheleht" role="tab" data-toriist="taavi" aria-selected="true">Taavi ja Oksjonikeskus</button>
-      <button type="button" class="vaheleht" role="tab" data-toriist="oksjon" aria-selected="false">Kaks Oksjonikeskuse vastust</button>
+      <button type="button" class="vaheleht" role="tab" data-toriist="oksjon" aria-selected="true">Kaks Oksjonikeskuse vastust</button>
+      <button type="button" class="vaheleht" role="tab" data-toriist="paev" aria-selected="false">TVT</button>
+      <button type="button" class="vaheleht" role="tab" data-toriist="taavi" aria-selected="false">Taavi ja Oksjonikeskus</button>
     </div>
   </div>
 </header>
@@ -165,6 +166,17 @@
       <div class="vali" data-pilu="uus">
         <span class="silt">2. Uus vastus</span>
         <div class="abi">Uuem Oksjonikeskuse vastus (CSV või Excel), näiteks tänane</div>
+      </div>
+    </div>
+
+    <div class="pilud" data-toriist="paev" hidden>
+      <div class="vali" data-pilu="paev_vana">
+        <span class="silt">1. Vana tabel</span>
+        <div class="abi">Varasem TVT tabel (CSV või Excel)</div>
+      </div>
+      <div class="vali" data-pilu="paev_uus">
+        <span class="silt">2. Uus tabel</span>
+        <div class="abi">Uuem TVT tabel (CSV või Excel)</div>
       </div>
     </div>
 
@@ -249,6 +261,7 @@ function silt(tekst, klass) {
 const MUUTUSE_KLASS = {
   "Töökoha vahetus": "tag-uus", "Uus töötamine": "tag-uus", "Uus kanne": "tag-uus", "Töötamine algas": "tag-algas", "Peatamine lõppes": "tag-algas",
   "Töötamine lõppes": "tag-loppes", "Töötamine peatati": "tag-peatatud", "Kadus vastusest": "tag-kadus",
+  "Ainult uues": "tag-uus", "Muutunud": "tag-info", "Ainult vanas": "tag-kadus",
 };
 
 const TORIISTAD = {
@@ -288,10 +301,26 @@ const TORIISTAD = {
       ik,
     ],
   },
+  paev: {
+    moodul: "paevamaarad_vordlus",
+    valjund: "paevamaarad_muutused.csv",
+    pilud: ["paev_vana", "paev_uus"],
+    kirjeldus: "Võrdleb kahte TVT tabelit ja näitab kõik read, mis erinevad: mis on ainult vanas, ainult uues või mõlemas, aga muutunud.",
+    nupp: "Võrdle tabeleid",
+    viga: "Faile ei õnnestunud töödelda. Kontrolli, et mõlemad on TVT tabelid (CSV või Excel).",
+    pealkiri: n => n === 0 ? "Erinevusi ei leitud" : `Leiti ${n} ${n === 1 ? "erinev rida" : "erinevat rida"}`,
+    tyhi: "Mõlemas tabelis on täpselt samad read.",
+    veerud: ["Muutus", "Isikukood", "Tüüp", "Periood", "Päevamäär #1", "Päevamäär #2", "Mis muutus"],
+    rida: ([muutus, ik, tyyp, algus, lopp, pm1, , pm2, , mis]) => [
+      silt(muutus, MUUTUSE_KLASS[muutus] || "tag-info"),
+      // kellaaeg (alati 12:00) jääb tabelist välja, CSV-s on see alles
+      ik, tyyp, algus ? `${algus.split(" ")[0]} - ${lopp.split(" ")[0]}` : "", pm1, pm2, mis,
+    ],
+  },
 };
 
 const failid = {};
-let aktiivne = "taavi", pyValmis = false, tootleb = false, valjund = null;
+let aktiivne = "oksjon", pyValmis = false, tootleb = false, valjund = null;
 
 // --- Vahelehed ---
 
@@ -332,13 +361,16 @@ function eemaldaFail(pilu) {
 function jaotaFailid(list) {
   if (aktiivne === "taavi") {
     list.forEach(f => maaraFail(f.name.toLowerCase().endsWith(".xml") ? "xml" : "csv", f));
-  } else if (list.length >= 2) {
+    return;
+  }
+  const [vana, uus] = TORIISTAD[aktiivne].pilud;
+  if (list.length >= 2) {
     // vanem fail (muutmisaja järgi) läheb "vana" alla
     const [a, b] = [...list].sort((x, y) => x.lastModified - y.lastModified);
-    maaraFail("vana", a);
-    maaraFail("uus", b);
+    maaraFail(vana, a);
+    maaraFail(uus, b);
   } else if (list.length === 1) {
-    maaraFail(failid.vana ? "uus" : "vana", list[0]);
+    maaraFail(failid[vana] ? uus : vana, list[0]);
   }
 }
 
@@ -383,7 +415,7 @@ function uuendaNuppu() {
 let hoiatused = [];
 const pyPromise = (async () => {
   const py = await loadPyodide({ stderr: t => hoiatused.push(t) });
-  for (const nimi of ["tookoha_muutused.py", "oksjonikeskus_vordlus.py"]) {
+  for (const nimi of ["tookoha_muutused.py", "oksjonikeskus_vordlus.py", "paevamaarad_vordlus.py"]) {
     const vastus = await fetch(nimi, { cache: "no-store" });
     if (!vastus.ok) throw new Error(`${nimi} puudub`);
     py.FS.writeFile(nimi, await vastus.text());
@@ -403,7 +435,7 @@ def kaivita(moodul, sisend1, sisend2, valjund):
 })().catch(e => {
   naitaViga("Tööriista laadimine ebaõnnestus. Kontrolli internetiühendust ja laadi leht uuesti.", e);
 });
-valiToriist("taavi");
+valiToriist("oksjon");
 
 // Exceli lugemise teegid laetakse alles siis, kui Exceli fail on päriselt valitud
 async function laadiExceliTeek(py, baidid) {

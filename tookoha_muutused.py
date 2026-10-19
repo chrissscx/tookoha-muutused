@@ -68,9 +68,9 @@ def loe_taavi(xml_fail):
 
 
 def parse_kp(s):
-    """'02.10.2026' või '2026-10-02T01:30:04.000+03:00' -> datetime"""
+    """'02.10.2026', '02.10.2026 12:00' või '2026-10-02T01:30:04.000+03:00' -> datetime"""
     s = (s or "").strip()[:19]
-    for fmt in ("%d.%m.%Y", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+    for fmt in ("%d.%m.%Y", "%d.%m.%Y %H:%M", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
         try:
             return datetime.strptime(s, fmt)
         except ValueError:
@@ -126,8 +126,9 @@ def dekodeeri(baidid):
     raise ValueError("Faili ei õnnestunud lugeda. See ei paista olevat CSV ega Exceli tabel.")
 
 
-def loe_csv(fail):
-    """Loeb Oksjonikeskuse vastuse. Sobib CSV (; tab või , eraldajaga) ja Excel (.xlsx, .xls)."""
+def loe_csv(fail, voti="Toimik"):
+    """Loeb Oksjonikeskuse vastuse (või muu tabeli, mille päises on veerg voti).
+    Sobib CSV (; tab või , eraldajaga) ja Excel (.xlsx, .xls)."""
     with open(fail, "rb") as f:
         algus = f.read(4)
     if algus.startswith(b"PK") or algus == b"\xd0\xcf\x11\xe0":
@@ -135,16 +136,19 @@ def loe_csv(fail):
     else:
         with open(fail, "rb") as f:
             sisu = dekodeeri(f.read())
+        nuusutaja = csv.Sniffer()
+        # Kui ; ja , sobivad mõlemad (nt "12,34" igas reas), eelista ;
+        nuusutaja.preferred = [";", "\t", ","]
         try:
-            murre = csv.Sniffer().sniff(sisu[:5000], delimiters=";\t,")
+            murre = nuusutaja.sniff(sisu[:5000], delimiters=";\t,")
         except csv.Error:
             raise ValueError("Faili ei õnnestunud lugeda. See ei paista olevat CSV ega Exceli tabel.")
         tabel = list(csv.reader(sisu.splitlines(), dialect=murre))
 
-    # Päis on esimene rida, kus on veerg "Toimik" (Excelis võib enne olla pealkirjaridu)
-    i = next((i for i, r in enumerate(tabel) if "Toimik" in (c.strip() for c in r)), None)
+    # Päis on esimene rida, kus on veerg voti (Excelis võib enne olla pealkirjaridu)
+    i = next((i for i, r in enumerate(tabel) if voti in (c.strip() for c in r)), None)
     if i is None:
-        raise ValueError("Failis pole veergu \"Toimik\". Kas see on Oksjonikeskuse vastus?")
+        raise ValueError(f"Failis pole veergu \"{voti}\". Kas valisid õige faili?")
     pais = [c.strip() for c in tabel[i]]
     for r in tabel[i + 1:]:
         if not any(c.strip() for c in r):
