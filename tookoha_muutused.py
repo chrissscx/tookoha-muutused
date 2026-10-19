@@ -5,6 +5,8 @@ ja väljastab ainult need toimikud, kus võlgniku töökoht on muutunud.
 
 Kasutus:
     python tookoha_muutused.py toimikud.xml oksjonikeskus.csv [valjund.csv]
+
+Oksjonikeskuse vastus võib olla ka Exceli fail (.xlsx vajab: pip install openpyxl).
 """
 import csv
 import re
@@ -76,17 +78,67 @@ def parse_kp(s):
     return None
 
 
-def loe_csv(csv_fail):
-    for enc in ("utf-8-sig", "cp1257"):
-        try:
-            with open(csv_fail, encoding=enc, newline="") as f:
-                sisu = f.read()
-            break
-        except UnicodeDecodeError:
-            continue
-    murre = csv.Sniffer().sniff(sisu[:5000], delimiters=";\t,")
-    for r in csv.DictReader(sisu.splitlines(), dialect=murre):
-        yield {k.strip(): (v or "").strip() for k, v in r.items() if k}
+def excel_lahter(v):
+    """Exceli lahtri väärtus samale kujule, nagu see oleks CSV-s."""
+    if v is None:
+        return ""
+    if isinstance(v, datetime):
+        if v.time() == datetime.min.time():
+            return v.strftime("%d.%m.%Y")
+        return v.strftime("%Y-%m-%dT%H:%M:%S")
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))  # isikukood, registrikood jms ilma ".0"-ta
+    return str(v)
+
+
+def loe_excel(fail, vana_xls):
+    """Esimese lehe read listidena. .xlsx loeb openpyxl, vana .xls loeb xlrd."""
+    try:
+        if vana_xls:
+            import xlrd
+            raamat = xlrd.open_workbook(fail)
+            leht = raamat.sheet_by_index(0)
+            for i in range(leht.nrows):
+                yield [excel_lahter(xlrd.xldate_as_datetime(c.value, raamat.datemode)
+                                    if c.ctype == xlrd.XL_CELL_DATE else c.value)
+                       for c in leht.row(i)]
+        else:
+            import io
+            import openpyxl
+            # sisu, mitte failinimi: openpyxl keeldub muidu failist, mille nimi ei lõpe .xlsx-ga
+            with open(fail, "rb") as f:
+                raamat = openpyxl.load_workbook(io.BytesIO(f.read()), read_only=True, data_only=True)
+            for rida in raamat.worksheets[0].iter_rows(values_only=True):
+                yield [excel_lahter(v) for v in rida]
+    except ImportError as e:
+        sys.exit(f"Exceli faili lugemiseks paigalda {e.name}: pip install {e.name}")
+
+
+def loe_csv(fail):
+    """Loeb Oksjonikeskuse vastuse. Sobib CSV (; tab või , eraldajaga) ja Excel (.xlsx, .xls)."""
+    with open(fail, "rb") as f:
+        algus = f.read(4)
+    if algus.startswith(b"PK") or algus == b"\xd0\xcf\x11\xe0":
+        tabel = list(loe_excel(fail, vana_xls=not algus.startswith(b"PK")))
+    else:
+        for enc in ("utf-8-sig", "cp1257"):
+            try:
+                with open(fail, encoding=enc, newline="") as f:
+                    sisu = f.read()
+                break
+            except UnicodeDecodeError:
+                continue
+        murre = csv.Sniffer().sniff(sisu[:5000], delimiters=";\t,")
+        tabel = list(csv.reader(sisu.splitlines(), dialect=murre))
+
+    # Päis on esimene rida, kus on veerg "Toimik" (Excelis võib enne olla pealkirjaridu)
+    i = next((i for i, r in enumerate(tabel) if "Toimik" in (c.strip() for c in r)), 0)
+    pais = [c.strip() for c in tabel[i]] if tabel else []
+    for r in tabel[i + 1:]:
+        if not any(c.strip() for c in r):
+            continue  # tühjad read
+        r = r + [""] * (len(pais) - len(r))
+        yield {k: v.strip() for k, v in zip(pais, r) if k}
 
 
 def viimased_kanded(read):

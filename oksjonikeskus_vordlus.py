@@ -8,6 +8,8 @@ kõrvuti (ka siis, kui tööandja on sama), lisaks võlgniku nimi ja lõpus muut
 Kasutus:
     python oksjonikeskus_vordlus.py vana.csv uus.csv [valjund.csv]
 
+Failid võivad olla ka Exceli failid (.xlsx vajab: pip install openpyxl).
+
 Vajab samas kaustas faili tookoha_muutused.py (sealt tulevad CSV lugemine ja abifunktsioonid).
 """
 import csv
