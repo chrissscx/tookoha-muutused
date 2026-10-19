@@ -114,6 +114,18 @@ def loe_excel(fail, vana_xls):
         sys.exit(f"Exceli faili lugemiseks paigalda {e.name}: pip install {e.name}")
 
 
+def dekodeeri(baidid):
+    """CSV-faili tekst. Excel salvestab CSV-d eri arvutites eri kodeeringus."""
+    if baidid.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return baidid.decode("utf-16")  # Exceli "Unicode tekst"
+    for enc in ("utf-8-sig", "cp1257", "cp1252"):
+        try:
+            return baidid.decode(enc)
+        except UnicodeDecodeError:
+            pass
+    raise ValueError("Faili ei õnnestunud lugeda. See ei paista olevat CSV ega Exceli tabel.")
+
+
 def loe_csv(fail):
     """Loeb Oksjonikeskuse vastuse. Sobib CSV (; tab või , eraldajaga) ja Excel (.xlsx, .xls)."""
     with open(fail, "rb") as f:
@@ -121,19 +133,19 @@ def loe_csv(fail):
     if algus.startswith(b"PK") or algus == b"\xd0\xcf\x11\xe0":
         tabel = list(loe_excel(fail, vana_xls=not algus.startswith(b"PK")))
     else:
-        for enc in ("utf-8-sig", "cp1257"):
-            try:
-                with open(fail, encoding=enc, newline="") as f:
-                    sisu = f.read()
-                break
-            except UnicodeDecodeError:
-                continue
-        murre = csv.Sniffer().sniff(sisu[:5000], delimiters=";\t,")
+        with open(fail, "rb") as f:
+            sisu = dekodeeri(f.read())
+        try:
+            murre = csv.Sniffer().sniff(sisu[:5000], delimiters=";\t,")
+        except csv.Error:
+            raise ValueError("Faili ei õnnestunud lugeda. See ei paista olevat CSV ega Exceli tabel.")
         tabel = list(csv.reader(sisu.splitlines(), dialect=murre))
 
     # Päis on esimene rida, kus on veerg "Toimik" (Excelis võib enne olla pealkirjaridu)
-    i = next((i for i, r in enumerate(tabel) if "Toimik" in (c.strip() for c in r)), 0)
-    pais = [c.strip() for c in tabel[i]] if tabel else []
+    i = next((i for i, r in enumerate(tabel) if "Toimik" in (c.strip() for c in r)), None)
+    if i is None:
+        raise ValueError("Failis pole veergu \"Toimik\". Kas see on Oksjonikeskuse vastus?")
+    pais = [c.strip() for c in tabel[i]]
     for r in tabel[i + 1:]:
         if not any(c.strip() for c in r):
             continue  # tühjad read

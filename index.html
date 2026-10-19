@@ -484,8 +484,11 @@ function laadiAlla() {
 
 function naitaViga(tekst, e) {
   console.error(e);
-  $("viga-tekst").textContent = tekst;
-  $("viga-detail").textContent = String(e?.message || e).trim().split("\n").pop();
+  const viimane = String(e?.message || e).trim().split("\n").pop();
+  // ValueError on skripti enda arusaadav teade, näita seda põhitekstina
+  const oma = viimane.match(/^ValueError: (.*)/);
+  $("viga-tekst").textContent = oma ? oma[1] : tekst;
+  $("viga-detail").textContent = oma ? "" : viimane;
   $("viga").hidden = false;
 }
 
